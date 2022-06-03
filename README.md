@@ -1,6 +1,6 @@
-#Lighthouse Labs Midterm Project
+# Lighthouse Labs Midterm Project
 ___
-##Flight Delay Predictions
+## Flight Delay Predictions
 
 #### Goals:
  - Predict flight delays one week in advance 
