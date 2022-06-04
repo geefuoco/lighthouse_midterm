@@ -109,7 +109,7 @@ def get_working_dataset():
   for col in cols:
     df[col] = df_flights[col]
 
-  data_file = os.join(DIR_PATH, "supervised_flights_sample.csv")
+  data_file = os.path.join(DIR_PATH, "supervised_flights_sample.csv")
   try:
     if not os.path.exists(data_file):
       df.to_csv(data_file, index=False)
