@@ -102,17 +102,16 @@ def get_working_dataset():
 
   df_flights = get_data_sample(table_name="flights")
 
-  cols = [
+  cols = pd.Series([
     "arr_delay", "cancelled", "carrier_delay", "weather_delay", "nas_delay", "security_delay", "late_aircraft_delay"
-  ]
+  ])
 
-  for col in cols:
-    df[col] = df_flights[col]
+  working_df = df_flights[[pd.concat((df.columns, cols))]]
 
   data_file = os.path.join(DIR_PATH, "supervised_flights_sample.csv")
   try:
     if not os.path.exists(data_file):
-      df.to_csv(data_file, index=False)
+      working_df.to_csv(data_file, index=False)
   except:
     print("Could not write dataframe to csv file")
-  return df
+  return working_df
