@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 
 path = os.path.abspath(os.path.join(__file__, "../../../.env"))
+DIR_PATH = os.path.abspath(os.path.join(__file__, "../../../data"))
+
 
 def get_data_sample(table_name, sample_size=100_000, q=None, forceRetrieve=False):
   """
@@ -20,7 +22,6 @@ def get_data_sample(table_name, sample_size=100_000, q=None, forceRetrieve=False
 
 
   """
-  dir_path = os.path.abspath(os.path.join(__file__, "../../../data"))
   data_path = os.path.abspath(os.path.join(__file__, f"../../../data/{table_name}_sample.csv"))
   data_file = os.path.exists(data_path)
   df = None
@@ -56,8 +57,8 @@ def get_data_sample(table_name, sample_size=100_000, q=None, forceRetrieve=False
         print("An error has occured while querying to the database")
         if q:
           print(f"Provided query was : {q}")
-      if not os.path.exists(dir_path):
-        os.mkdir(dir_path)
+      if not os.path.exists(DIR_PATH):
+        os.mkdir(DIR_PATH)
       df.to_csv(data_path, index=False)
   return df
 
@@ -90,3 +91,28 @@ def execute_query(query, connection):
     return data
   except:
     print("Error occured while executing the query.")
+
+
+def get_working_dataset():
+  """
+  Create the basic dataset needed for the problems of regression or classification\n
+  Creates a csv file in the data folder if it doesnt exist, and returns a pandas dataframe
+  """
+  df = get_data_sample(table_name="flights_test")
+
+  df_flights = get_data_sample(table_name="flights")
+
+  cols = [
+    "arr_delay", "cancelled", "carrier_delay", "weather_delay", "nas_delay", "security_delay", "late_aircraft_delay"
+  ]
+
+  for col in cols:
+    df[col] = df_flights[col]
+
+  data_file = os.join(DIR_PATH, "supervised_flights_sample.csv")
+  try:
+    if not os.path.exists(data_file):
+      df.to_csv(data_file, index=False)
+  except:
+    print("Could not write dataframe to csv file")
+  return df
