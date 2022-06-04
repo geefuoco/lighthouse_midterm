@@ -96,22 +96,26 @@ def execute_query(query, connection):
 def get_working_dataset():
   """
   Create the basic dataset needed for the problems of regression or classification\n
-  Creates a csv file in the data folder if it doesnt exist, and returns a pandas dataframe
+  Creates a csv file in the data folder if it doesnt exist, and returns a pandas dataframe.\n
+  Reads from data folder if exists.
   """
-  df = get_data_sample(table_name="flights_test")
-
-  df_flights = get_data_sample(table_name="flights")
-
-  cols = pd.Series([
-    "arr_delay", "cancelled", "carrier_delay", "weather_delay", "nas_delay", "security_delay", "late_aircraft_delay"
-  ])
-
-  working_df = df_flights[[pd.concat((df.columns, cols))]]
-
   data_file = os.path.join(DIR_PATH, "supervised_flights_sample.csv")
-  try:
-    if not os.path.exists(data_file):
+  working_df = None
+  if os.path.exists(data_file):
+    print("supervised_flights_sample.csv exists. Reading from data folder")
+    working_df = pd.read_csv(data_file)
+  else:
+    df = get_data_sample(table_name="flights_test")
+    df_flights = get_data_sample(table_name="flights")
+
+    cols = [
+      "arr_delay", "cancelled", "carrier_delay", "weather_delay", "nas_delay", "security_delay", "late_aircraft_delay"
+    ]
+
+    working_df = df_flights[list(df.columns) + cols]
+
+    try:
       working_df.to_csv(data_file, index=False)
-  except:
-    print("Could not write dataframe to csv file")
+    except:
+      print("Could not write dataframe to csv file")
   return working_df
