@@ -13,7 +13,8 @@ def get_weather_data():
   data_file = os.path.abspath(os.path.join(__file__, "../../../data/weather_data.json"))
   if os.path.exists(data_file):
     print("Found weather data. Loading from data folder")
-    return json.load(data_file)
+    file = open(data_file, "r")
+    return json.load(file)
   else:
     print("Weather data not found. Making requests ...")
     df = get_data_sample(table_name="flights")
