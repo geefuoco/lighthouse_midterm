@@ -1,10 +1,47 @@
 import psycopg2
 import pandas as pd
 import os
+import json
+import requests
 from dotenv import load_dotenv
 
 path = os.path.abspath(os.path.join(__file__, "../../../.env"))
 DIR_PATH = os.path.abspath(os.path.join(__file__, "../../../data"))
+
+
+def get_weather_data():
+  data_file = os.path.abspath(os.path.join(__file__, "../../../data/weather_data.json"))
+  if os.path.exists(data_file):
+    print("Found weather data. Loading from data folder")
+    return json.load(data_file)
+  else:
+    print("Weather data not found. Making requests ...")
+    df = get_data_sample(table_name="flights")
+    start_date = df["fl_date"].min()
+    end_date = df["fl_date"].max()
+    cities = df["origin_city_name"].unique()
+    url = "https://api.worldweatheronline.com/premium/v1/past-weather.ashx"
+    responses = []
+
+    for city in cities:
+      payload = {
+        "key": os.getenv("WEATHER_API_KEY"),
+        "date": start_date,
+        "enddate": end_date,
+        "q": city,
+        "format": "json",
+        "tp": 24
+      }
+      res = requests.get(url, params=payload)
+      if res.status_code == 200:
+        responses.append(res.json())
+    
+    with open(data_file, "w") as f:
+      json.dump(responses, f)
+
+    return responses
+
+
 
 
 def get_data_sample(table_name, sample_size=100_000, q=None, forceRetrieve=False):
