@@ -82,7 +82,9 @@ def get_data_sample(table_name, sample_size=100_000, q=None, forceRetrieve=False
     dbparams = dict(database=os.getenv("DB"), user=os.getenv("USERNAME"), password=os.getenv("PASS") ,host=os.getenv("HOSTNAME"))
 
     query = f"""
-    SELECT * FROM {table_name} LIMIT {sample_size}
+    SELECT * FROM {table_name} 
+    ORDER BY random()
+    LIMIT {sample_size}
     """
     connection = connect_to_db(dbparams)
     if connection:
