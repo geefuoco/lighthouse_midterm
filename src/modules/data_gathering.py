@@ -1,3 +1,4 @@
+from numpy import deprecate
 import psycopg2
 import pandas as pd
 import os
@@ -8,7 +9,6 @@ from dotenv import load_dotenv
 path = os.path.abspath(os.path.join(__file__, "../../../.env"))
 DIR_PATH = os.path.abspath(os.path.join(__file__, "../../../data"))
 
-
 def get_weather_data():
   data_file = os.path.abspath(os.path.join(__file__, "../../../data/weather_data.json"))
   if os.path.exists(data_file):
@@ -17,9 +17,9 @@ def get_weather_data():
     return json.load(file)
   else:
     print("Weather data not found. Making requests ...")
-    df = get_data_sample(table_name="flights")
+    df = get_working_dataset()
+    city_df = df.loc[:, ["origin_city_name", "lat", "lng", "fl_date"]].drop_duplicates()
     start_date = df["fl_date"].min()
-    end_date = df["fl_date"].max()
     cities = df["origin_city_name"].unique()
     url = "https://api.worldweatheronline.com/premium/v1/past-weather.ashx"
     responses = []
@@ -28,7 +28,6 @@ def get_weather_data():
       payload = {
         "key": os.getenv("WEATHER_API_KEY"),
         "date": start_date,
-        "enddate": end_date,
         "q": city,
         "format": "json",
         "tp": 24
@@ -83,14 +82,15 @@ def get_data_sample(table_name, sample_size=100_000, q=None, forceRetrieve=False
 
     query = f"""
     SELECT * FROM {table_name} 
-    ORDER BY random()
+    ORDER BY RANDOM ()
     LIMIT {sample_size}
     """
     connection = connect_to_db(dbparams)
     if connection:
       try:
         if q:
-          df = pd.read_sql_query(q+f" LIMIT {sample_size}", connection)
+          q += f"LIMIT {sample_size}"
+          df = pd.read_sql_query(q, connection)
         else:
           df = pd.read_sql_query(query, connection)
       except:
@@ -133,6 +133,21 @@ def execute_query(query, connection):
     print("Error occured while executing the query.")
 
 
+def _get_city_data():
+  city_df = pd.read_csv("../data/us_cities/uscities.csv")
+  city_df = city_df[["city", "state_id", "lat", "lng"]]
+  city_df["location"] = city_df["city"] + ", " + city_df["state_id"]
+  city_df = city_df.drop(columns=["city", "state_id"]).set_index("location")
+  return city_df
+
+
+def _replacement(s):
+  split = s.split("/")
+  city = split[0]
+  state_id = split[-1][-2:]
+  return f"{city}, {state_id}"
+
+
 def get_working_dataset():
   """
   Create the basic dataset needed for the problems of regression or classification\n
@@ -152,7 +167,15 @@ def get_working_dataset():
       "arr_delay", "cancelled", "carrier_delay", "weather_delay", "nas_delay", "security_delay", "late_aircraft_delay"
     ]
 
+    df_flights.loc[df_flights["origin_city_name"].str.contains("/"), "origin_city_name"] = df_flights.loc[df_flights["origin_city_name"].str.contains("/"), "origin_city_name"].apply(_replacement)
+
+
+
     working_df = df_flights[list(df.columns) + cols]
+
+    city_df = _get_city_data()
+
+    working_df = working_df.join(city_df, on="origin_city_name").dropna(subset=["lat", "lng"], axis=0)
 
     try:
       working_df.to_csv(data_file, index=False)
