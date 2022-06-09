@@ -1,8 +1,6 @@
 /data
-/output
 .env
 *.pyc
 /__pycache__
 __pycache__/
-playground.ipynb
 */__pycache__/*
